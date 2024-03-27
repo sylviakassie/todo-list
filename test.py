@@ -2,23 +2,27 @@ import ttkbootstrap as ttk
 import tkinter as tk
 from tkinter import messagebox
 from task import Task, TaskManager
+from datetime import datetime
 
 
 class TaskUpdateWindow:
-    def __init__(self, master: ttk.Toplevel, listbox: tk.Listbox, index: int):
+    def __init__(self, master: ttk.Toplevel, listbox: tk.Listbox, index: int, taskmanager: TaskManager):
         self.master = master
         self.master.geometry('300x300')
         self.master.title('Update Task')
         self.master.resizable(False, False)
         self.listbox = listbox
         self.index = index
+        self.taskmanager = taskmanager
+        self.task = taskmanager._get_task(index)
 
         self.task_name_label = ttk.Label(
             self.master, text='Task Name', font=('Helvetica', 12))
         self.task_entry = ttk.Entry(self.master, width=20)
         self.due_date_label = ttk.Label(
             self.master, text='Due Date', font=('Helvetica', 12))
-        self.due_date = ttk.DateEntry(self.master, width=10)
+        self.due_date = ttk.DateEntry(
+            self.master, width=10, startdate=self.task.due_date)
         self.save_button = ttk.Button(
             self.master, text='Save', style='success.TButton', command=self.save)
 
@@ -29,17 +33,17 @@ class TaskUpdateWindow:
         self.due_date.place(x=100, y=70)
         self.save_button.place(x=150, y=120)
 
-        self.set_task()
-
-    def set_task(self):
-        task = self.listbox.get(self.index)
-        self.task_entry.insert(0, task)
+        self.task_entry.insert(0, self.task.name)
 
     def save(self):
         task = self.task_entry.get()
-        if task:
+        due = self.due_date.entry.get()
+        if task and due:
             self.listbox.delete(self.index)
-            self.listbox.insert(self.index, task)
+            self.listbox.insert(self.index, task + ' - ' + due)
+            self.listbox.selection_clear(self.index)
+            self.taskmanager.update_task(self.index, Task(
+                task, datetime.strptime(due, "%x")))
 
         else:
             messagebox.showerror('Error', 'Task cannot be empty')
@@ -65,7 +69,7 @@ class ToDoListTest:
         self.due_date = ttk.DateEntry(
             self.task_entry_container, width=10)
 
-        self.task_entry_container.pack()
+        self.task_entry_container.pack(pady=10)
         self.task_entry.pack(side='left', padx=2)
         self.due_date.pack(side='right', padx=2)
 
@@ -77,40 +81,49 @@ class ToDoListTest:
         self.update_button = ttk.Button(
             self.buttons_container, text='Update Task', style='info.TButton', width=10, command=self.update, state='disabled')
         self.done_button = ttk.Button(
-            self.buttons_container, text='Mark Done', style='warning.TButton', width=10, state='disabled')
+            self.buttons_container, text='Task Done', style='warning.TButton', width=10, command=self.mark_done, state='disabled')
 
         self.add_button.pack(side='left', padx=2)
         self.drop_button.pack(side='left', padx=2)
         self.update_button.pack(side='left', padx=2)
         self.done_button.pack(side='left', padx=2)
 
-        self.buttons_container.pack()
+        self.buttons_container.pack(fill='x', pady=10, padx=20)
 
         # ListBox
-        self.task_list = tk.Listbox(self.master, selectbackground="", activestyle='none',
+        self.task_list = tk.Listbox(self.master, fg="red", activestyle='none',
                                     width=50, font=("Comic Sans MS", 25))
-        self.task_list.pack(pady=20, padx=20, side='left', fill='y')
+        self.task_list.pack(pady=10, padx=20, side='left', fill='y')
         self.task_list.bind('<<ListboxSelect>>', self.on_select)
 
     def on_select(self, event):
         selected_task = self.task_list.get(self.task_list.curselection())
+
         if selected_task:
+            task = self.tasks._get_task(self.task_list.curselection()[0])
             self.drop_button.config(state='normal')
             self.update_button.config(state='normal')
             self.done_button.config(state='normal')
 
+            if task.is_done:
+                self.done_button.config(text='Uncheck Task', width=11)
+                self.update_button.config(state='disable')
+            elif not task.is_done:
+                self.done_button.config(text='Task Done')
+
     def add_task(self):
         task = self.task_entry.get()
         due = self.due_date.entry.get()
+
         if task and due:
             self.task_entry.delete(0, ttk.END)
-            self.due_date.entry.delete(0, ttk.END)
 
+            due = datetime.strptime(due, "%x")
             task = Task(task, due)
             self.tasks.add_task(task)
 
             self.task_list.insert(ttk.END, task.name + ' - ' +
-                                  task.due_date)
+                                  task.due_date.strftime('%x'))
 
         elif not task:
             messagebox.showerror('Error', 'Task cannot be empty')
@@ -122,9 +135,34 @@ class ToDoListTest:
         selected_task = self.task_list.curselection()
         if selected_task:
             self.task_list.delete(selected_task)
+            self.tasks.delete_task(self.tasks._get_task(selected_task[0]))
 
         else:
             messagebox.showerror('Error', 'Select a task to drop')
+
+    def mark_done(self):
+        selected_task = self.task_list.curselection()
+        if selected_task:
+            task = self.tasks._get_task(selected_task[0])
+
+            if task.is_done:
+                task_entry = self.task_list.get(selected_task)
+                self.task_list.delete(selected_task)
+                new_task_entry = task_entry[2:]
+                self.task_list.insert(selected_task[0], new_task_entry)
+                self.task_list.itemconfig(selected_task, fg='#f288d4')
+                self.task_list.selection_clear(selected_task)
+                task.is_done = False
+
+            elif not task.is_done:
+                print(f'x2: {task.is_done}')
+                task_entry = self.task_list.get(selected_task)
+                self.task_list.delete(selected_task)
+                task_entry = '\u2713 ' + task_entry
+                self.task_list.insert(selected_task, task_entry)
+                self.task_list.itemconfig(selected_task, fg='gray')
+                self.task_list.selection_clear(selected_task)
+                task.is_done = True
 
     def update(self):
         selected_task = self.task_list.curselection()
@@ -134,7 +172,7 @@ class ToDoListTest:
 
     def open_update_window(self, index: int):
         form_master = ttk.Toplevel(self.master)
-        form = TaskUpdateWindow(form_master, self.task_list, index)
+        form = TaskUpdateWindow(form_master, self.task_list, index, self.tasks)
 
         form_master.wait_window(form.master)
 
