@@ -73,11 +73,11 @@ class ToDoListTest:
         self.add_button = ttk.Button(
             self.buttons_container, text='Add Task', style='success.TButton', command=self.add_task, width=10)
         self.drop_button = ttk.Button(
-            self.buttons_container, text='Drop Task', style='danger.TButton', command=self.drop, width=10)
+            self.buttons_container, text='Drop Task', style='danger.TButton', command=self.drop, width=10, state='disabled')
         self.update_button = ttk.Button(
-            self.buttons_container, text='Update Task', style='info.TButton', width=10, command=self.update)
+            self.buttons_container, text='Update Task', style='info.TButton', width=10, command=self.update, state='disabled')
         self.done_button = ttk.Button(
-            self.buttons_container, text='Mark Done', style='warning.TButton', width=10)
+            self.buttons_container, text='Mark Done', style='warning.TButton', width=10, state='disabled')
 
         self.add_button.pack(side='left', padx=2)
         self.drop_button.pack(side='left', padx=2)
@@ -87,11 +87,17 @@ class ToDoListTest:
         self.buttons_container.pack()
 
         # ListBox
-        self.task_list = tk.Listbox(
-            self.master, selectbackground="blue", activestyle='none', fg='red', width=50, font=("Comic Sans MS", 25))
+        self.task_list = tk.Listbox(self.master, selectbackground="", activestyle='none',
+                                    width=50, font=("Comic Sans MS", 25))
         self.task_list.pack(pady=20, padx=20, side='left', fill='y')
-        self.task_list.config(highlightbackground='black',
-                              highlightthickness=1, selectbackground='blue')
+        self.task_list.bind('<<ListboxSelect>>', self.on_select)
+
+    def on_select(self, event):
+        selected_task = self.task_list.get(self.task_list.curselection())
+        if selected_task:
+            self.drop_button.config(state='normal')
+            self.update_button.config(state='normal')
+            self.done_button.config(state='normal')
 
     def add_task(self):
         task = self.task_entry.get()
@@ -103,7 +109,7 @@ class ToDoListTest:
             task = Task(task, due)
             self.tasks.add_task(task)
 
-            self.task_list.insert(0, task.name + ' - ' +
+            self.task_list.insert(ttk.END, task.name + ' - ' +
                                   task.due_date)
 
         elif not task:
