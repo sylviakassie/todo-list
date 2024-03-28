@@ -8,6 +8,14 @@ class Task:
         self.due_date = due_date
         self.is_done = is_done
 
+    def __str__(self) -> str:
+        done = 'Done' if self.is_done else 'Not Done'
+        return f'{self.name} - {self.due_date} - {done}'
+
+    def __repr__(self) -> str:
+        done = 'Done' if self.is_done else 'Not Done'
+        return f'{self.name} - {self.due_date} - {done}'
+
 
 class TaskManager:
     def __init__(self) -> None:
