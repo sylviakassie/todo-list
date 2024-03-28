@@ -216,7 +216,7 @@ class ToDoListGUI:
 
         if os.path.exists(file_path) and os.path.isfile(os.path.join(file_path, file)):
             with open(os.path.join(file_path, file), 'rb') as f:
-                self.tasks = pickle.load(f)
+                self.tasks: TaskManager = pickle.load(f)
 
                 for task in self.tasks.get_tasks():
                     if task.is_done:

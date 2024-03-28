@@ -1,11 +1,12 @@
 
+from datetime import datetime
 from typing import List
 
 
 class Task:
-    def __init__(self, name: str, due_date, is_done=False) -> None:
+    def __init__(self, name: str, due_date: datetime, is_done=False) -> None:
         self.name = name
-        self.due_date = due_date
+        self.due_date: datetime = due_date
         self.is_done = is_done
 
     def __str__(self) -> str:
