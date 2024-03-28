@@ -54,7 +54,7 @@ class TaskUpdateWindow:
         self.master.destroy()
 
 
-class ToDoListTest:
+class ToDoListGUI:
 
     def __init__(self, master: ttk.Window):
         self.app_file_path = os.path.dirname(__file__)
@@ -63,6 +63,8 @@ class ToDoListTest:
         self.master = master
         self.master.geometry('500x600')
         self.master.resizable(False, False)
+
+        self.menu = ttk.Menu(self.master)
 
         self.tasks = TaskManager()
 
@@ -166,7 +168,6 @@ class ToDoListTest:
                 self.update_button.config(state='normal')
 
             elif not task.is_done:
-                print(f'x2: {task.is_done}')
                 task_entry = self.task_list.get(selected_task)
                 self.task_list.delete(selected_task)
                 task_entry = '\u2713 ' + task_entry
@@ -191,6 +192,10 @@ class ToDoListTest:
     def save_to_file(self):
         file_path = os.path.join(self.main_path, 'data', 'app_data')
         file = 'app_data.dat'
+
+        for task in self.tasks.get_tasks():
+            if task.is_done:
+                self.tasks.delete_task(task)
 
         if os.path.isdir(file_path):
 
@@ -228,5 +233,5 @@ class ToDoListTest:
 
 if __name__ == '__main__':
     app = ttk.Window('ToDo List', 'vapor')
-    ToDoListTest(app)
+    ToDoListGUI(app)
     app.mainloop()
